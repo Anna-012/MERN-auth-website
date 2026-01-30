@@ -12,7 +12,7 @@ connectDB();
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://mern-auth-website-tau.vercel.app", // your frontend URL
+  "https://mern-auth-website-iota.vercel.app",
 ];
 
 app.use(express.json());
