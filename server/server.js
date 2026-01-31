@@ -6,30 +6,27 @@ import connectDB from "./config/mongodb.js";
 import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 
+app.set("trust proxy", 1);
+
 const app = express();
 const port = process.env.PORT || 4000;
 connectDB();
 
-app.set("trust proxy", 1);
-
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://mern-auth-website-rho.vercel.app",
-];
+app.use(
+  cors({
+    origin: "https://mern-auth-website-rho.vercel.app",
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: "https://mern-auth-website-rho.vercel.app",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
 
