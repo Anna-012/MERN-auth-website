@@ -5,7 +5,11 @@ import { toast } from "react-toastify";
 export const AppContent = createContext();
 
 export const AppContextProvider = (props) => {
-  axios.defaults.withCredentials = true;
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [isLoggedin, setIsLoggedin] = useState(false);

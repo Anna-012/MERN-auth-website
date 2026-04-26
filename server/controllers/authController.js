@@ -18,13 +18,13 @@ export const register = async (req, res) => {
     const existingUser = await userModel.findOne({ email });
 
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: "user already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "user already exists",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const otp = String(Math.floor(100000 + Math.random() * 900000));
 
     const user = new userModel({
@@ -41,14 +41,6 @@ export const register = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    //Sending welcome email
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
@@ -64,9 +56,10 @@ export const register = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "OTP sent to your email",
+      token,
     });
   } catch (error) {
-    res.json({
+    return res.json({
       success: false,
       message: error.message,
     });
@@ -84,8 +77,11 @@ export const login = async (req, res) => {
   }
   try {
     const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.json({ success: false, message: "Invalid email" });
+    if (!user.isAccountVerified) {
+      return res.json({
+        success: false,
+        message: "Please verify your email first",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -98,14 +94,11 @@ export const login = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+    return res.json({
+      success: true,
+      message: "Login successful",
+      token,
     });
-
-    return res.json({ success: true, message: "Login successful" });
   } catch (error) {
     return res.json({
       success: false,
@@ -116,18 +109,11 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
-    res.clearCookie("token", {
-      httpOnly: true,
-
-      secure: true,
-    });
-
     return res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     return res.json({
       success: false,
       message: error.message,
-      sameSite: "none",
     });
   }
 };
@@ -215,18 +201,28 @@ export const verifyEmail = async (req, res) => {
 };
 
 //check if user is authenticated
-
 export const isAuthenticated = async (req, res) => {
   try {
-    const token = req.cookies.token;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.json({ success: false });
+    }
+
+    const token = authHeader.split(" ")[1];
+
     if (!token) {
       return res.json({ success: false });
     }
 
     jwt.verify(token, process.env.JWT_SECRET);
+
     return res.json({ success: true });
-  } catch {
-    return res.json({ success: false });
+  } catch (error) {
+    return res.json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -256,8 +252,7 @@ export const sendResetOtp = async (req, res) => {
       from: process.env.SENDER_EMAIL,
       to: user.email,
       subject: "Password Reset OTP",
-      // text: `Your OTP for resetting your password is ${otp}.
-      //  Use this OTP to proceed with resetting your password`,
+
       html: PASSWORD_RESET_TEMPLATE.replace("{{otp}}", otp).replace(
         "{{email}}",
         user.email,

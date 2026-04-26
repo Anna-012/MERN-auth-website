@@ -21,6 +21,7 @@ const Login = () => {
       console.log(data);
 
       if (data.success) {
+        localStorage.setItem("token", data.token);
         alert(data.message);
         setIsLoggedin(true);
         await getUserData();
