@@ -6,29 +6,23 @@ import connectDB from "./config/mongodb.js";
 import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 
+const app = express();
+
 app.set("trust proxy", 1);
 
-const app = express();
 const port = process.env.PORT || 4000;
 connectDB();
 
 app.use(
   cors({
-    origin: "https://mern-auth-website-rho.vercel.app",
+    origin: process.env.CLIENT_URL,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
 
 app.use(express.json());
 app.use(cookieParser());
-
-app.use(
-  cors({
-    origin: "https://mern-auth-website-rho.vercel.app",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  }),
-);
 
 //API Endpoints
 

@@ -40,7 +40,7 @@ const Navbar = () => {
       toast.error(error.message);
     }
   };
-
+  console.log(userData);
   return (
     <div
       className="w-full flex justify-between items-center 
@@ -59,17 +59,12 @@ const Navbar = () => {
           z-10 text-black rounded pt-10"
           >
             <ul className="list-none m-0 p-2 bg-gray-100 text-sm">
-              {!userData.isAccountVerified && (
-                <li
-                  onClick={sendVerificationOtp}
-                  className="py-1 px-2 hover:bg-gray-200 cursor-pointer"
-                >
-                  Verify email
-                </li>
-              )}
+              <li className="font-semibold">{userData.name}</li>
+              <li className="font-small text-gray-800">{userData.email}</li>
+
               <li
                 onClick={logout}
-                className="py-1 px-2 hover:bg-gray-200 cursor-pointer pr-10"
+                className="hover:bg-gray-100 cursor-pointer pr-10 text-red-500 py-2"
               >
                 Logout
               </li>
@@ -77,13 +72,16 @@ const Navbar = () => {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => navigate("/login")}
-          className="flex items-center gap-2 border border-gray-500 
+        <div className="flex gap-4">
+          <button
+            onClick={() => navigate("/login")}
+            className="flex items-center gap-2 border border-gray-500 
       rounded-full px-6 py-2 text-gray-800 hover:bg-gray-100 transition-all"
-        >
-          Login <img src={assets.arrow_icon} alt="" />
-        </button>
+          >
+            Login <img src={assets.arrow_icon} alt="" />
+          </button>
+          <button onClick={() => navigate("/register")}>Register</button>
+        </div>
       )}
     </div>
   );

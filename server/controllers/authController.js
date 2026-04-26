@@ -18,12 +18,23 @@ export const register = async (req, res) => {
     const existingUser = await userModel.findOne({ email });
 
     if (existingUser) {
-      return res.json({ success: false, message: "user already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "user already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new userModel({ name, email, password: hashedPassword });
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    const user = new userModel({
+      name,
+      email,
+      password: hashedPassword,
+      verifyOtp: otp,
+      verifyOtpExpireAt: Date.now() + 24 * 60 * 60 * 1000,
+    });
+
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -32,8 +43,8 @@ export const register = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true, // MUST in prod
-      sameSite: "none", // MUST for cross-site
+      secure: true,
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -41,14 +52,19 @@ export const register = async (req, res) => {
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
-      subject: "Welcome to NexGen Sites",
-      text: `Welcome to NexGen Sites website. 
-      Your account has been created with email id:${email}`,
+      subject: "Account Verification OTP",
+      html: EMAIL_VERIFY_TEMPLATE.replace("{{otp}}", otp).replace(
+        "{{email}}",
+        email,
+      ),
     };
 
     await transporter.sendMail(mailOptions);
 
-    return res.json({ success: true });
+    return res.status(201).json({
+      success: true,
+      message: "OTP sent to your email",
+    });
   } catch (error) {
     res.json({
       success: false,
@@ -84,14 +100,12 @@ export const login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       secure: true,
-
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true });
+    return res.json({ success: true, message: "Login successful" });
   } catch (error) {
     return res.json({
       success: false,
@@ -104,12 +118,11 @@ export const logout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
+
       secure: true,
-      sameSite: "none",
     });
 
-    return res.json({ success: true, message: "Logged Out" });
+    return res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     return res.json({
       success: false,
@@ -121,7 +134,6 @@ export const logout = async (req, res) => {
 //Send verification otp to user's email
 export const sendVerifyOtp = async (req, res) => {
   try {
-    // const { userId } = req.body;
     const userId = req.userId;
 
     const user = await userModel.findById(userId);
